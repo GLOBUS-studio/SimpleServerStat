@@ -1,96 +1,88 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GLOBUS.studio - Test Area stat</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.bundle.min.js"></script>
-    <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-<style>
-body {
-  background-image: url('back.webp');
-  background-size: cover;
-  background-color: black !important;
-}
-</style>
-<style>
+    <style>
+        body {
+            background-image: url('back.webp');
+            background-size: cover;
+            background-attachment: fixed;
+            color: white;
+        }
         html, body {
             height: 100%;
             font-family: 'Montserrat', sans-serif;
             font-weight: 400;            
         }
-        footer {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-        }
-        h1 {
+        h1, footer {
             font-family: 'Montserrat', sans-serif;
             font-weight: 700;
         }  
-        .canvas-class {
-            margin-top: 3rem!important;
-            padding-top: 3rem!important;             
+        .canvas-container {
+            padding-top: 3rem;             
         }
-        @media (max-width: 992px) {
-          .canvas-class {
-            margin-top: 3rem!important;
-            padding-top: 0rem!important; 
-          }
-          .mob-hidden {
-            display: none;
-          }
-        }      
+        @media (max-width: 768px) {
+            .canvas-container {
+                padding-top: 1rem;
+            }
+            .info-text, .info-list {
+                text-align: center;
+                padding: 0 1rem;
+            }
+            .info-list {
+                padding-bottom: 2rem;
+            }
+        }
+        footer {
+            background: rgba(0, 0, 0, 0.5); /* Optional: for better visibility */
+            padding: 0.5rem 0;
+        }
     </style>
 </head>
-  <body>
+<body>
 
-  <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
-        <div class="container">
-            <a class="navbar-brand"><img src="logo.png" alt="GLOBUS.studio test area stat" height="64" width="64"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item text-white">
-                        <a class="nav-link text-white" href="https://globus.studio"><b>GLOBUS.studio</b></a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container d-flex justify-content-center align-items-center canvas-class" style="/*min-height: calc(100vh - 50px);*/">
-        <div class="row">
-            <div class="col-lg-6">
-                <canvas id="myChart"></canvas>
-            </div>
-            <div class="col-lg-6 pe-5 ps-5 text-white">
-                <h1 class="mob-hidden">TEST AREA info</h1>
-                <p class="mob-hidden">This page contains technical information that is intended solely for the use of technical personnel. 
-                    If you are not a technical expert, please do not attempt to use or implement any information 
-                    from this page without first consulting with an appropriate expert.</p>
-<p class="visually-hidden">
-Disclaimer:<br>
-The information provided on this page is provided "as is" without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. The owners and creators of this page do not assume any liability or responsibility for any errors or omissions in the content of this page. The use of this information is at your own risk.
-</p>
-               <ul>
-                    <li id="osData"></li>
-                    <li id="opgss">GLOBUS.studio Server Control Panel v2.54b</li>
-                    <li id="phpVer"></li>
-                    <li id="cpuCount"></li>
-               </ul>
-           
-            </div>
+<nav class="navbar navbar-expand-lg navbar-light bg-transparent">
+    <div class="container">
+        <a class="navbar-brand"><img src="logo.png" alt="GLOBUS.studio test area stat" height="64" width="64"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="https://globus.studio"><b>GLOBUS.studio</b></a>
+                </li>
+            </ul>
         </div>
     </div>
+</nav>
 
-    <footer class="bg-transparent text-white text-center">
-        <p><b>GLOBUS.studio</b> - Success in persistence!</p>
-    </footer>
+<div class="container canvas-container">
+    <div class="row">
+        <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div class="col-lg-6 col-md-12 info-text">
+            <h1>TEST AREA info</h1>
+            <p>The content on this page is exclusively for the use of qualified technical staff. If you lack technical expertise, please refrain from applying any information found here without seeking guidance from a qualified professional first.</p>
+            <ul class="info-list">
+                <li id="osData"></li>
+                <li id="opgss">GLOBUS.studio SimpleServerStat</li>
+                <li id="phpVer"></li>
+                <li id="cpuCount"></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<footer class="text-center">
+    <p><b>GLOBUS.studio</b> - Success in persistence!</p>
+</footer>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
