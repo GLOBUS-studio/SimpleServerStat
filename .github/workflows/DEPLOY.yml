@@ -1,0 +1,26 @@
+name: DEPLOY
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: set -eu
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - run: mkdir "$HOME/.ssh"
+      - run: echo "${{ secrets.TESTAREA }}" > "$HOME/.ssh/key"
+      - run: chmod 600 "$HOME/.ssh/key"
+      
+      - name: Rsync files
+        run: |
+          cd app
+          export SSHPASS=${{ secrets.SSH_PASSWORD }}
+          rsync -e "sshpass -e ssh -p 3333 -i $HOME/.ssh/key -o StrictHostKeyChecking=no" --archive --compress --update . ocat@185.237.225.43:/var/www/ocat/data/www/g1.our-clients-are.top
