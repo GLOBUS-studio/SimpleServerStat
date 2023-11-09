@@ -145,7 +145,7 @@ The information provided on this page is provided "as is" without warranty of an
 
     function addDataPoint(dataPoints, timestamp, value) {
         dataPoints.push({ x: timestamp, y: value });
-        if (dataPoints.length > 60) {
+        if (dataPoints.length > 35) {
             dataPoints.shift();
         }
     }

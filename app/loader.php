@@ -8,22 +8,27 @@ class SystemInfo {
     }
 
     public function getLoadfromTop() {
-        exec('top -b -n 2 -d 0.01 | grep "Cpu(s)" | tail -n 1 | awk \'{print $2+$4}\'', $output);
-        usleep(10000); 
-        exec('top -b -n 1 -d 0.01 | grep "Cpu(s)" | tail -n 1 | awk \'{print $2+$4}\'', $output);
-        $cpuLoad = round($output[0], 2);
-        return $cpuLoad;
+        exec('top -bn2 | grep "Cpu(s)" | tail -n 1 | awk \'{print $2+$4}\'', $output);
+        if (isset($output[0])) {
+            return round($output[0], 2);
+        }
+        return null;
     }
 
     public function getLoadfromMpstat() {
-        $output = shell_exec('mpstat 2 1 | awk \'/Average:/ {print 100 - $NF}\'');
-        $cpuLoad = round($output, 2);
-        return $cpuLoad;
+        $output = shell_exec('mpstat -o JSON 2 1');
+        if ($output) {
+            $json = json_decode($output, true);
+            if (isset($json['sysstat']['hosts'][0]['statistics'][0]['cpu-load'][0]['idle'])) {
+                $cpuLoad = 100 - $json['sysstat']['hosts'][0]['statistics'][0]['cpu-load'][0]['idle'];
+                return round($cpuLoad, 2);
+            }
+        }
+        return null;
     }
 
     public function getCPUCount() {
-        $cpu_count = shell_exec('nproc');
-        return $cpu_count;
+        return (int)shell_exec('nproc');
     }
 
     public function getMemoryUsage() {
@@ -117,8 +122,16 @@ class SystemInfo {
 
 if (isset($_GET['action']) && $_GET['action'] === 'system_info') {
     $system_info = new SystemInfo();
+    $load = $system_info->getLoadfromMpstat();
+    if ($load === null) {
+        $load = $system_info->getLoadfromTop();
+    }
+    if ($load === null) {
+        $load = $system_info->getLoad();
+    }
+    
     $data = array(
-        'load' => $system_info->getLoadfromMpstat(),
+        'load' => $load,
         'memory_usage' => $system_info->getMemoryUsage(),
         'IO_usage' => $system_info->getIOUsage()
     );
