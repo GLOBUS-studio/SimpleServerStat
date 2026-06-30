@@ -39,13 +39,16 @@ app/
 
 ## Running
 
-Serve the `app/` directory with PHP, for example:
+Serve the `app/` directory with PHP:
 
 ```bash
 php -S 0.0.0.0:8080 -t app
 ```
 
 Then open <http://localhost:8080/>.
+
+On Windows you can double-click **`start.bat`** — it starts the server and
+opens the browser in one step.
 
 ## Configuration
 
@@ -85,8 +88,11 @@ the dashboard injects it automatically.
 ## Development
 
 ```bash
-# Start the built-in server locally
+# Start the built-in server
 php -S 127.0.0.1:8080 -t app
+
+# Windows: one-click launcher
+start.bat
 
 # Lint all PHP files
 find app -name '*.php' -print0 | xargs -0 -n1 php -l 2>&1 | grep -v '^No syntax'
