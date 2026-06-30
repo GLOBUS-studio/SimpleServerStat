@@ -8,6 +8,8 @@ Simple, dependency-light server dashboard that shows live **CPU** and **RAM**
 usage (plus basic host info) in the browser. Backend is plain PHP, frontend is
 a single HTML page driven by [Chart.js](https://www.chartjs.org/).
 
+![Screenshot](screenshot.jpg)
+
 ## Features
 
 - Live CPU and RAM chart, refreshed every 2 seconds.
