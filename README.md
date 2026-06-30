@@ -1,5 +1,8 @@
 # SimpleServerStat
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-777BB4.svg)
+
 Simple, dependency-light server dashboard that shows live **CPU** and **RAM**
 usage (plus basic host info) in the browser. Backend is plain PHP, frontend is
 a single HTML page driven by [Chart.js](https://www.chartjs.org/).
@@ -67,5 +70,4 @@ the dashboard injects it automatically.
 
 ## License
 
-No license file is currently included. Add a `LICENSE` of your choice before
-distributing.
+Released under the [MIT License](LICENSE).
