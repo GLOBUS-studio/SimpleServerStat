@@ -1,0 +1,13 @@
+# Local configuration (contains secrets)
+app/config.php
+
+# Logs and runtime cache
+*.log
+sss_cpu.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
