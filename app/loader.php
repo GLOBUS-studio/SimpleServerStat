@@ -9,9 +9,9 @@ declare(strict_types=1);
  *   loader.php?action=system_info  -> live CPU load and memory usage
  *   loader.php?action=general      -> static host information
  *
- * All metrics are collected without blocking the request (no `top -bn2`,
- * `mpstat 2 1` or `iostat` style sampling). CPU usage is derived from a
- * cached /proc/stat snapshot, memory from /proc/meminfo.
+ * Metrics are collected without blocking the request. On Linux they are read
+ * from /proc (CPU from a cached /proc/stat snapshot, memory from
+ * /proc/meminfo); on Windows from WMI (wmic, with a PowerShell CIM fallback).
  */
 
 function sss_config(): array
@@ -80,6 +80,18 @@ final class SystemInfo
 
     public function getCpuCount(): int
     {
+        if ($this->isWindows()) {
+            $env = getenv('NUMBER_OF_PROCESSORS');
+            if ($env !== false && (int) $env > 0) {
+                return (int) $env;
+            }
+            $out = @shell_exec('wmic cpu get NumberOfLogicalProcessors /value 2>NUL');
+            if (is_string($out) && preg_match('/NumberOfLogicalProcessors=(\d+)/', $out, $m) && (int) $m[1] > 0) {
+                return (int) $m[1];
+            }
+            return 1;
+        }
+
         $count = 0;
 
         if (is_readable('/proc/cpuinfo')) {
@@ -100,11 +112,16 @@ final class SystemInfo
     }
 
     /**
-     * CPU usage in percent (0-100). Uses a cached /proc/stat snapshot so the
-     * request never blocks. Falls back to load average when unavailable.
+     * CPU usage in percent (0-100). On Linux it uses a cached /proc/stat
+     * snapshot so the request never blocks; on Windows it queries WMI. Falls
+     * back to load average where available, otherwise null.
      */
     public function getCpuUsage(): ?float
     {
+        if ($this->isWindows()) {
+            return $this->windowsCpuUsage();
+        }
+
         $line = $this->firstLine('/proc/stat');
         if ($line === null || strncmp($line, 'cpu ', 4) !== 0) {
             return $this->loadAverageUsage();
@@ -138,11 +155,16 @@ final class SystemInfo
     }
 
     /**
-     * Memory usage parsed from /proc/meminfo. Values are reported in GiB,
-     * usage as an integer percentage. Returns null when unavailable.
+     * Memory usage. Values are reported in GiB, usage as an integer percentage.
+     * Reads /proc/meminfo on Linux and WMI on Windows. Returns null when
+     * unavailable.
      */
     public function getMemoryUsage(): ?array
     {
+        if ($this->isWindows()) {
+            return $this->windowsMemoryUsage();
+        }
+
         if (!is_readable('/proc/meminfo')) {
             return null;
         }
@@ -178,11 +200,6 @@ final class SystemInfo
         ];
     }
 
-    public function getPhpVersion(): string
-    {
-        return 'PHP version: ' . PHP_VERSION;
-    }
-
     public function getOsData(): string
     {
         return trim(php_uname('s') . ' ' . php_uname('r'));
@@ -201,6 +218,71 @@ final class SystemInfo
 
         $usage = ($load[0] / max(1, $this->getCpuCount())) * 100;
         return round($this->clamp($usage), 2);
+    }
+
+    private function windowsCpuUsage(): ?float
+    {
+        $out = @shell_exec('wmic cpu get loadpercentage /value 2>NUL');
+        if (is_string($out) && preg_match_all('/LoadPercentage=(\d+)/', $out, $m) && count($m[1]) > 0) {
+            $avg = array_sum(array_map('intval', $m[1])) / count($m[1]);
+            return round($this->clamp($avg), 2);
+        }
+
+        $ps = @shell_exec(
+            'powershell -NoProfile -NonInteractive -Command '
+            . '"(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average" 2>NUL'
+        );
+        if (is_string($ps) && is_numeric(trim($ps))) {
+            return round($this->clamp((float) trim($ps)), 2);
+        }
+
+        return null;
+    }
+
+    private function windowsMemoryUsage(): ?array
+    {
+        $total = null;
+        $free = null;
+
+        $out = @shell_exec('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value 2>NUL');
+        if (is_string($out)) {
+            if (preg_match('/FreePhysicalMemory=(\d+)/', $out, $m)) {
+                $free = (int) $m[1];
+            }
+            if (preg_match('/TotalVisibleMemorySize=(\d+)/', $out, $m)) {
+                $total = (int) $m[1];
+            }
+        }
+
+        if ($total === null || $free === null || $total <= 0) {
+            $ps = @shell_exec(
+                'powershell -NoProfile -NonInteractive -Command '
+                . '"$o = Get-CimInstance Win32_OperatingSystem; '
+                . 'Write-Output $o.TotalVisibleMemorySize; Write-Output $o.FreePhysicalMemory" 2>NUL'
+            );
+            if (is_string($ps)) {
+                $lines = preg_split('/\r?\n/', trim($ps));
+                if (count($lines) >= 2 && is_numeric($lines[0]) && is_numeric($lines[1])) {
+                    $total = (int) $lines[0];
+                    $free = (int) $lines[1];
+                }
+            }
+        }
+
+        if ($total === null || $free === null || $total <= 0) {
+            return null;
+        }
+
+        $used = max(0, $total - $free);
+
+        return [
+            'total' => $this->toGiB($total),
+            'used' => $this->toGiB($used),
+            'free' => $this->toGiB($free),
+            'available' => $this->toGiB($free),
+            'cached' => 0.0,
+            'usage' => (int) round($used / $total * 100),
+        ];
     }
 
     private function readSnapshot(string $file): ?array
@@ -262,6 +344,11 @@ final class SystemInfo
     {
         return stripos(PHP_OS, 'linux') === 0;
     }
+
+    private function isWindows(): bool
+    {
+        return stripos(PHP_OS, 'WIN') === 0;
+    }
 }
 
 $action = isset($_GET['action']) ? (string) $_GET['action'] : '';
@@ -280,8 +367,8 @@ switch ($action) {
 
     case 'general':
         sss_send_json([
-            'cpu_count' => 'Cores: ' . $info->getCpuCount(),
-            'php_ver' => $info->getPhpVersion(),
+            'cpu_count' => $info->getCpuCount(),
+            'php_ver' => PHP_VERSION,
             'os_data' => $info->getOsData(),
         ]);
         break;
